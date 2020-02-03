@@ -112,7 +112,7 @@
 
                         <div class="w3-container">
 
-                                <button type="button" class="w3-button w3-block" data-toggle="collapse" data-target={{"#cluster-"+str(clust_id)}}>  <font size="6">Cluster {{clust_id}}</font>  </button>
+                                <button type="button" class="w3-button w3-block" data-toggle="collapse" data-target={{"#cluster-"+str(clust_id)}}>  <font size="6">Cluster {{i}}</font>  </button>
 
                                 <div id={{"cluster-"+ str(clust_id)}} class="panel-collapse collapse">
 
