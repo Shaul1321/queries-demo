@@ -104,10 +104,10 @@
                  <div id="app-body">
 
                  % columns = list(df.columns.values)
-                 % cluster_ids = set(df["cluster_id"].tolist())
        
                  % for i, clust_id in enumerate(cluster_ids):
 
+                        % print(len(cluster_ids), len(df["cluster_id"]), clust_id)
                         % clust_df = df[df["cluster_id"] == clust_id]
 
                         <div class="w3-container">
@@ -116,7 +116,10 @@
 
                                 <div id={{"cluster-"+ str(clust_id)}} class="panel-collapse collapse">
 
-                                <div class="panel-footer"> <font size = 5 <b> Common words:</b> {{clust_stats["pmis"][i][:25]}} </font> </div>
+                                <div class="panel-footer"> <font size = 5> <b> Common words:</b> {{clust_stats["pmis"][i][:10]}} </font> 
+
+                                <p> Cluster size: {{len(clust_df)}} </p>
+                                </div>
 
                                 <ul class="list-group">
 
