@@ -34,7 +34,7 @@ def load_states(query_word):
         return vecs
 
 
-def calculate_cluster_stats(df):
+def calculate_pmi_for_clusters(df, environment_extracting_func):
 
                 # Collect counts for coocurring words
 
@@ -48,10 +48,13 @@ def calculate_cluster_stats(df):
                         for i, row in relevant.iterrows():
 
                               sent = row["sentence_text"].split(" ")
-                              clust_sents.extend([w for w in sent if w not in FUNC_WORDS])
+                              query_ind = row["word_first_index"]
+                              window = environment_extracting_func(row)
+
+                              clust_sents.extend([w for w in window if w not in FUNC_WORDS and w != sent[query_ind] ])
                         
                         counter = Counter(clust_sents)
-                        common_words_and_counts = counter.most_common(5000)
+                        common_words_and_counts = counter.most_common(2000)
                         #common_words, _ = list(zip(*common_words_and_counts))
                         cluster_common_words.append(common_words_and_counts)
 
@@ -85,27 +88,49 @@ def calculate_cluster_stats(df):
                 return PMIs
 
                 
-                        
+def linear_window_environment(df_row, radius = 3):                       
+
+        sent = df_row["sentence_text"].split(" ")
+        query_ind = df_row["word_first_index"]
+        window = sent[max(0, query_ind - radius):min(len(sent) - 1, query_ind +radius + 1)]
+        return window        
+
+
+def perform_kmeans_clsutering(df, vecs,  num_clusts):
+
+        print("Performing PCA...")
+        pca = PCA(n_components = min(400, len(vecs)))
+        vecs_pca = pca.fit_transform(vecs)
+        print("Done PCA. Explained vairance: {}".format(np.sum(pca.explained_variance_ratio_)))
+        print("Performing clustering...")
+        kmeans = sklearn.cluster.KMeans(n_clusters = num_clusts, random_state=0).fit(vecs_pca)
+        print("Done.")
+        df["cluster_id"] = kmeans.labels_
+
+
+        # do pca on cluster means to get 1d ordering (to present similar clusters near each other)
+        centers = kmeans.cluster_centers_
+        pca = PCA(n_components = 1)
+        scores = pca.fit_transform(centers)
+        ordering_and_scores = sorted(zip(scores, set(kmeans.labels_.copy())), key = lambda pair: pair[0])
+        labels_sorted = map(np.array, (zip(*ordering_and_scores)))
+
+        return set(kmeans.labels_)
+       
+        
 
 @route('/query/<query_word>')
 def get_word(query_word):
         df = load_df(query_word)
         vecs = load_states(query_word)
 
-        df, vecs = df.head(30000), vecs[:30000]
+        df, vecs = df.head(300), vecs[:300]
+        labels_sorted = perform_kmeans_clsutering(df, vecs, num_clusts = 150)
         
-        print("Performing PCA...")
-        pca = PCA(n_components = min(400, len(vecs)))
-        vecs_pca = pca.fit_transform(vecs)
-        print("Done PCA. Explained vairance: {}".format(np.sum(pca.explained_variance_ratio_)))
-        print("Performing clustering...")
-        kmeans = sklearn.cluster.KMeans(n_clusters=150, random_state=0).fit(vecs_pca)
-        print("Done.")
-        df["cluster_id"] = kmeans.labels_
-        pmis = calculate_cluster_stats(df)
-        clust_stats = {"pmis": pmis}
+        pmis_linear_window = calculate_pmi_for_clusters(df, linear_window_environment)
+        clust_stats = {"pmis": pmis_linear_window}
 
-        return template('query_results.tpl', df = df, clust_stats = clust_stats)
+        return template('query_results.tpl', df = df, clust_stats = clust_stats, cluster_ids  = labels_sorted)
 
 
 @get('/query') # or @route('/login')
