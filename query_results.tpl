@@ -104,24 +104,40 @@
                  <div id="app-body">
 
                  % columns = list(df.columns.values)
-                 % cluster_ids = df["cluster_id"].tolist()
+                 % cluster_ids = set(df["cluster_id"].tolist())
        
-                 % for clust_id in cluster_ids:
+                 % for i, clust_id in enumerate(cluster_ids):
 
                         % clust_df = df[df["cluster_id"] == clust_id]
 
-
                         <div class="w3-container">
 
-                                <button type="button" class="w3-button w3-block" data-toggle="collapse" data-target={{"#cluster-"+str(clust_id)}}>Cluster {{clust_id}}</button>
+                                <button type="button" class="w3-button w3-block" data-toggle="collapse" data-target={{"#cluster-"+str(clust_id)}}>  <font size="6">Cluster {{clust_id}}</font>  </button>
 
-                                <div id={{"cluster-"+ str(clust_id)}} class="collapse">
+                                <div id={{"cluster-"+ str(clust_id)}} class="panel-collapse collapse">
+
+                                <div class="panel-footer"> <font size = 5 <b> Common words:</b> {{clust_stats["pmis"][i][:25]}} </font> </div>
+
+                                <ul class="list-group">
+
                                 % for index, row in clust_df.iterrows():
                                         % txt_splitted, txt = row["sentence_text"].split(" "), row["sentence_text"]
+                                        <%
+                                        query_index = row["word_first_index"]
+                                        txt_formatted = txt_splitted.copy()
+                                        left = " ".join(txt_splitted[:query_index])
+                                        right = " ".join(txt_splitted[query_index + 1:])
+                                        dep = row["dep_edge"]
+                                        w = txt_splitted[query_index]
+                                        %>
 
-                                        <p> {{txt}} </p>
+                                        <li class="list-group-item">  <font size="6">  {{left}}  <font size = '6' color = 'blue'> {{w}}<sup>{{dep}}</sup> </font>  {{right}}     </font>  </li>
                                 % end
+
+                                </ul>
+                                
                                 </div>
+
                         </div>
 
                 
