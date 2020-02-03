@@ -120,8 +120,9 @@ def perform_kmeans_clsutering(df, vecs,  num_clusts):
         pca = PCA(n_components = 1)
         scores = pca.fit_transform(centers)
         ordering_and_scores = sorted(zip(scores, set(kmeans.labels_.copy())), key = lambda pair: pair[0])
-        labels_sorted = map(np.array, (zip(*ordering_and_scores)))
-
+        _, labels_sorted = zip(*ordering_and_scores)
+        #labels_sorted = np.array([x[0].item() for x in labels_sorted])
+        return labels_sorted
         return set(kmeans.labels_)
        
         
@@ -131,7 +132,7 @@ def get_word(query_word):
         df = load_df(query_word)
         vecs = load_states(query_word)
 
-        df, vecs = df.head(30000), vecs[:30000]
+        df, vecs = df.head(300000), vecs[:300000]
         labels_sorted = perform_kmeans_clsutering(df, vecs, num_clusts = 250)
         
         pmis_linear_window = calculate_pmi_for_clusters(df, entire_sentence_environment)
