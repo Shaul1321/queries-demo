@@ -146,9 +146,17 @@ def perform_kmeans_clsutering(df, vecs,  num_clusts):
 @route('/query/<query_word>')
 def get_word(query_word):
         df = load_df(query_word)
-        vecs = load_states(query_word)
 
-        df, vecs = df.head(300000), vecs[:300000]
+        # cleaning
+        
+        sents = df["sentence_text"].tolist()
+        lengths = [len(s.split(" ")) for s in sents]
+        df["sent_length"] = lengths
+        df = df[df["sent_length"] > df["word_first_index"]]
+        
+        #vecs = load_states(query_word)
+
+        #df, vecs = df.head(300000), vecs[:300000]
         labels_sorted = range(len(set(df["cluster_id"].tolist()))) #perform_kmeans_clsutering(df, vecs, num_clusts = 250)
         
         pmis_linear_window = calculate_pmi_for_clusters(df, entire_sentence_environment)
