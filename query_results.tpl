@@ -95,9 +95,13 @@
                 <div class="dropdown">
                         <button class="dropbtn">Query</button>
                         <div class="dropdown-content">
+                                <a href = "../query/SAR"> SAR </a>
+                                <a href = "../query/HPLC"> HPLC </a>
+                                <a href = "../query/asthma"> Asthma </a>
+                                <a href = "../query/diabetes"> Diabetes </a>
                                 <a href = "../query/coli">E.Coli</a>
                                 <a href="../query/lipase">Lipase</a>
-                                <a href="../query/choline">Choline</a>
+                                <a href="../query/al.">Et al.</a>
                         </div>
                 </div> 
                 
