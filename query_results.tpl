@@ -95,6 +95,7 @@
                 <div class="dropdown">
                         <button class="dropbtn">Query</button>
                         <div class="dropdown-content">
+                                <a href = "../query/coli">E.Coli</a>
                                 <a href="../query/lipase">Lipase</a>
                                 <a href="../query/choline">Choline</a>
                         </div>
@@ -107,7 +108,6 @@
        
                  % for i, clust_id in enumerate(cluster_ids):
 
-                        % print(len(cluster_ids), len(df["cluster_id"]), clust_id)
                         % clust_df = df[df["cluster_id"] == clust_id]
 
                         <div class="w3-container">
@@ -116,9 +116,11 @@
 
                                 <div id={{"cluster-"+ str(clust_id)}} class="panel-collapse collapse">
 
-                                <div class="panel-footer"> <font size = 5> <b> Common words:</b> {{clust_stats["pmis"][i][:10]}} </font> 
-
-                                <p> Cluster size: {{len(clust_df)}} </p>
+                                <div class="panel-footer"> <font size = 4> <b> Cluster Top-PMI Words:</b> {{clust_stats["pmis"][i][:20]}} </font> 
+                                <p>  <font size = 4> <b> Common Nouns (linear window):</b> {{clust_stats["common_nouns"][i][:20]}} </font>  </p>
+                                <p>  <font size = 4> <b> Common Verbs (linear window):</b> {{clust_stats["common_verbs"][i][:20]}} </font>  </p>
+                                <p>  <font size = 4> <b> Common Adjectives (linear window):</b> {{clust_stats["common_adjectives"][i][:20]}} </font>  </p>
+                                <p> Cluster Size: {{len(clust_df)}} </p>
                                 </div>
 
                                 <ul class="list-group">
