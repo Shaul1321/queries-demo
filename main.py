@@ -11,6 +11,7 @@ from sklearn import cluster
 from sklearn.decomposition import PCA
 import numpy as np
 from collections import Counter
+from typing import List
 
 FUNC_WORDS = set(["in", "on", "at", "the", "a", "an", "who", "that", "this", "which", "can",
                                      "cannot", "not", "no", "do", "does", "of", "these", "those", ",", ".", "'", "(",
@@ -22,12 +23,12 @@ FUNC_WORDS = set(["in", "on", "at", "the", "a", "an", "who", "that", "this", "wh
 
 def load_df(query_word):
 
-     df = pd.read_pickle("data/df.query=lipase.pickle")
+     df = pd.read_pickle("data/df.query={}.pickle".format(query_word))
      return df
 
 def load_states(query_word):
 
-        vecs_path = "data/states.query=lipase.pickle"
+        vecs_path = "data/states.query={}.pickle".format(query_word)
         with open(vecs_path, "rb") as f:
 
                 vecs = pickle.load(f)
@@ -38,32 +39,7 @@ def calculate_pmi_for_clusters(df, environment_extracting_func):
 
                 # Collect counts for coocurring words
 
-                cluster_common_words = []
-                
-                for clust_id in set(df["cluster_id"].tolist()):
-                        counter = Counter()
-                        
-                        clust_sents = []
-                        relevant = df[df["cluster_id"] == clust_id]
-                        for i, row in relevant.iterrows():
-
-                              sent = row["sentence_text"].split(" ")
-                              query_ind = row["word_first_index"]
-                              window = environment_extracting_func(row)
-
-                              clust_sents.extend([w for w in window if w not in FUNC_WORDS and w != sent[query_ind] ])
-                        
-                        counter = Counter(clust_sents)
-                        common_words_and_counts = counter.most_common(2500)
-                        #common_words, _ = list(zip(*common_words_and_counts))
-                        cluster_common_words.append(common_words_and_counts)
-
-                total_count = Counter()
-                for clust_data in cluster_common_words:
-
-                        for w,c in clust_data:
-
-                              total_count[w] += c
+                total_count, cluster_common_words = collect_per_cluster_counts(df, environment_extracting_func)
 
                 # calculate PMI
 
@@ -79,7 +55,7 @@ def calculate_pmi_for_clusters(df, environment_extracting_func):
                                 p1 = count / clust_total_counts
                                 p2 = total_count[w] / total_count_all
 
-                                pmi = np.log(p1 / p2)
+                                pmi = np.log(p1 / (p2 + 1e-4))
                                 clust_pmis.append((w, pmi))
                       
                       clust_pmis = sorted(clust_pmis, key = lambda pair: -pair[1])
@@ -87,28 +63,68 @@ def calculate_pmi_for_clusters(df, environment_extracting_func):
 
                 return PMIs
 
-                
-def linear_window_environment(df_row, radius = 3):                       
 
-        sent = df_row["sentence_text"].split(" ")
+def collect_per_cluster_counts(df, environment_extracting_func, specific_POS = None):
+
+                cluster_common_words = []
+                
+                for clust_id in set(df["cluster_id"].tolist()):
+                        counter = Counter()
+                        
+                        clust_sents = []
+                        relevant = df[df["cluster_id"] == clust_id]
+                        for i, row in relevant.iterrows():
+
+                              sent = row["sentence_text"].split(" ")
+                              query_ind = row["word_first_index"]
+                              window = environment_extracting_func(row, specific_POS)
+
+                              clust_sents.extend([w for w in window if w not in FUNC_WORDS and w != sent[query_ind] ])
+                        
+                        counter = Counter(clust_sents)
+                        common_words_and_counts = counter.most_common(2500)
+                        #common_words, _ = list(zip(*common_words_and_counts))
+                        cluster_common_words.append(common_words_and_counts)
+
+                total_count = Counter()
+                for clust_data in cluster_common_words:
+
+                        for w,c in clust_data:
+
+                              total_count[w] += c
+                              
+                
+                return total_count, cluster_common_words
+                              
+                                             
+def linear_window_environment(df_row, radius = 3, POS_to_keep = None):                       
+
+        sent = df_row["lemma_seq"].split(" ")
         query_ind = df_row["word_first_index"]
         window = sent[max(0, query_ind - radius):min(len(sent) - 1, query_ind +radius + 1)]
         return window        
 
-def entire_sentence_environment(df_row, radius = 3):                       
+def entire_sentence_environment(df_row, radius = 3, POS_to_keep= None):                       
 
-        sent = df_row["sentence_text"].split(" ")
+        sent = df_row["lemma_seq"].split(" ")
         query_ind = df_row["word_first_index"]
         window = sent[:]
         return window     
 
+def entire_sentence_environment_per_POS(df_row, POS_to_keep):
+
+        sent = df_row["lemma_seq"].split(" ")
+        pos = df_row["pos_seq"].split(" ")
+        query_ind = df_row["word_first_index"]
+        window = [w for i,w in enumerate(sent) if ((POS_to_keep is None) or (pos[i] in POS_to_keep))]
+        return window             
 
 def perform_kmeans_clsutering(df, vecs,  num_clusts):
 
         print("Performing PCA...")
-        pca = PCA(n_components = min(0.96, len(vecs)))
+        pca = PCA(n_components = 0.9)
         vecs_pca = pca.fit_transform(vecs)
-        print("Done PCA. Explained vairance: {}".format(np.sum(pca.explained_variance_ratio_)))
+        print("Done PCA. Explained vairance: {}; num components: {}".format(np.sum(pca.explained_variance_ratio_), pca.n_components_))
         print("Performing clustering...")
         kmeans = sklearn.cluster.KMeans(n_clusters = num_clusts, random_state=0).fit(vecs_pca)
         print("Done.")
@@ -122,7 +138,7 @@ def perform_kmeans_clsutering(df, vecs,  num_clusts):
         ordering_and_scores = sorted(zip(scores, set(kmeans.labels_.copy())), key = lambda pair: pair[0])
         _, labels_sorted = zip(*ordering_and_scores)
         #labels_sorted = np.array([x[0].item() for x in labels_sorted])
-        return labels_sorted
+        #return labels_sorted
         return set(kmeans.labels_)
        
         
@@ -133,10 +149,14 @@ def get_word(query_word):
         vecs = load_states(query_word)
 
         df, vecs = df.head(300000), vecs[:300000]
-        labels_sorted = perform_kmeans_clsutering(df, vecs, num_clusts = 250)
+        labels_sorted = range(len(set(df["cluster_id"].tolist()))) #perform_kmeans_clsutering(df, vecs, num_clusts = 250)
         
         pmis_linear_window = calculate_pmi_for_clusters(df, entire_sentence_environment)
-        clust_stats = {"pmis": pmis_linear_window}
+        _, common_nouns_linear_window = collect_per_cluster_counts(df, entire_sentence_environment_per_POS, ["NN", "NNS", "NNP", "NNPS"])
+        _, common_verbs_linear_window = collect_per_cluster_counts(df, entire_sentence_environment_per_POS, ["VBD", "VBG", "VNB", "VBZ", "VB"])
+        _, common_adjs_linear_window = collect_per_cluster_counts(df, entire_sentence_environment_per_POS, ["JJ", "JJR", "JJS", "CD", "CC"])
+         
+        clust_stats = {"pmis": pmis_linear_window, "common_nouns": common_nouns_linear_window, "common_verbs": common_verbs_linear_window, "common_adjectives": common_adjs_linear_window}
 
         return template('query_results.tpl', df = df, clust_stats = clust_stats, cluster_ids  = labels_sorted)
 
