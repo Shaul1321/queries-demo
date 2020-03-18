@@ -145,6 +145,7 @@ def perform_kmeans_clsutering(df, vecs,  num_clusts):
 
 @route('/query/<query_word>')
 def get_word(query_word):
+        print("hello world word")
         df = load_df(query_word)
 
         # cleaning
@@ -168,20 +169,22 @@ def get_word(query_word):
 
         return template('query_results.tpl', df = df, clust_stats = clust_stats, cluster_ids  = labels_sorted)
 
-
+"""
 @get('/query') # or @route('/login')
 def get_clusters():
-
+    print("hello world query")
     return template('results.tpl', elements_by_freq = words_by_freq, type = "words")
+"""
 
-
-@route('/index.html')
+#@route('/index.html')
 @route('/')
 def server_static(filename='index.html'):
+    print("hello world static")
     return static_file(filename, root='./')
 
 if __name__ == '__main__':
        
         
-    run(host='localhost', port=8000)
+    run(host='localhost', port=8001)
+
 

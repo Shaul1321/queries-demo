@@ -101,7 +101,10 @@
                                 <a href = "../query/diabetes"> Diabetes </a>
                                 <a href = "../query/coli">E.Coli</a>
                                 <a href="../query/lipase">Lipase</a>
+                                <a href = "../query/mimicry"> Mimicry </a>
+                                <a href = "../query/coronavirus"> Coronavirus </a>
                                 <a href="../query/al.">Et al.</a>
+                                
                         </div>
                 </div> 
                 
