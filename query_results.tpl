@@ -95,6 +95,9 @@
                 <div class="dropdown">
                         <button class="dropbtn">Query</button>
                         <div class="dropdown-content">
+                                <a href = "../query/coronavirus"> Coronavirus </a>
+                                <a href = "../query/coronavirus-spread"> Coronavirus-spread </a>
+                                <a href = "../query/coronavirus-diagnosis"> Coronavirus-diagnosis </a>
                                 <a href = "../query/SAR"> SAR </a>
                                 <a href = "../query/HPLC"> HPLC </a>
                                 <a href = "../query/asthma"> Asthma </a>
@@ -102,7 +105,6 @@
                                 <a href = "../query/coli">E.Coli</a>
                                 <a href="../query/lipase">Lipase</a>
                                 <a href = "../query/mimicry"> Mimicry </a>
-                                <a href = "../query/coronavirus"> Coronavirus </a>
                                 <a href="../query/al.">Et al.</a>
                                 
                         </div>
@@ -140,10 +142,12 @@
                                         left = " ".join(txt_splitted[:query_index])
                                         right = " ".join(txt_splitted[query_index + 1:])
                                         dep = row["dep_edge"]
+                                        dep = ""
                                         w = txt_splitted[query_index]
                                         %>
 
-                                        <li class="list-group-item">  <font size="6">  {{left}}  <font size = '6' color = 'blue'> {{w}}<sup>{{dep}}</sup> </font>  {{right}}     </font>  </li>
+                                       <li class="list-group-item">  <font size="6">  {{left}}  <font size = '6' color = 'blue'> {{w}}<sup>{{dep}}</sup> </font>  {{right}}     </font>  </li>
+
                                 % end
 
                                 </ul>
